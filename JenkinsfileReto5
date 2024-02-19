@@ -2,17 +2,17 @@ pipeline{
     agent none
     
     stages{
-        stage('Get Code CI'){
+        stage('Get Code CD'){
             agent { label 'git_pytest' }
             steps {
-                git branch: 'staging', url: 'https://github.com/cp060/todo-list-aws-config.git'
+                git branch: 'production', url: 'https://github.com/cp060/todo-list-aws-config.git'
                 stash includes: 'samconfig.toml', name: 'samconfig'
-                git branch: 'develop', url: 'https://github.com/cp060/todo-list-aws.git'
+                git branch: 'master', url: 'https://github.com/cp060/todo-list-aws.git'
                 stash 'code'
             }
         }
         
-        stage('Static Test CI') {
+        stage('Static Test CD') {
             agent { label 'git_pytest' }
             steps {
                 script {
@@ -25,33 +25,25 @@ pipeline{
             }
         }
         
-        stage('Deploy CI'){
+        stage('Deploy CD'){
             agent { label 'sam' }            
             steps {
                 unstash 'samconfig'
                 unstash 'code'
-                sh 'export AWS_DEFAULT_REGION=us-east-1 && sam build && sam validate && sam deploy --force-upload --no-confirm-changeset --no-fail-on-empty-changeset --stack-name staging --config-env staging --resolve-s3 | tee url_output.txt'
+                sh 'export AWS_DEFAULT_REGION=us-east-1 && sam build && sam validate && sam deploy --force-upload --no-confirm-changeset --no-fail-on-empty-changeset --stack-name production --config-env production --resolve-s3 | tee url_output.txt'
                 stash includes: 'url_output.txt', name: 'url_output'
             }
         }
         
-        stage('Rest Test CI'){
+        stage('Rest Test CD'){
             agent { label 'git_pytest' }
             steps{
                 unstash 'url_output'
-                sh 'ksh tests.ksh && rm -fr url_output.txt && python3 -m pytest --junitxml=result-rest.xml test/integration/todoApiTest.py'
-                junit 'result-rest.xml'
-                sh 'rm -fr result-rest.xml'
+                sh 'ksh tests.ksh && rm -fr url_output.txt && python3 -m pytest --junitxml=result-testToDo.xml -k "not deletetodo and not updatetodo and not addtodo" -s test/integration/todoApiTest.py'
+                junit 'result-testToDo.xml'
+                sh 'rm -fr result-testToDo.xml'
             }
-        }
-        
-        stage('Promote CI'){
-            agent { label 'git_pytest' }
-            steps{
-                sh 'git add test/integration/todoApiTest.py && git commit -am "release" && git push -f https://cp060:`cat /var/lib/jenkins/secrets/token`@github.com/cp060/todo-list-aws.git'
-                sh 'git checkout -b master && git merge develop && git push -f https://cp060:cat /var/lib/jenkins/secrets/token@github.com/cp060/todo-list-aws.git'
-            }
-        }
+        }    
         
         stage('Clean agent 1'){
             agent { label 'git_pytest' }
