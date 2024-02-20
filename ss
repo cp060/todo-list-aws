@@ -1,9 +1,0 @@
-sssssssssss
-ssssssss
-ssssssaaaaaa
-aaaaaaaaaaa
-5555555
-666666666666
-77777777
-88888
-9999999999
