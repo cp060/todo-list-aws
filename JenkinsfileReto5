@@ -1,4 +1,4 @@
-AAAAAAAAAAAAAAAAAAAAAAAAAA pipeline{
+pipeline{
     agent none
     
     stages{
