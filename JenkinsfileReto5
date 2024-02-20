@@ -1,65 +1,29 @@
 pipeline{
     agent none
-    
     stages{
-        stage('Get Code CI'){
+        stage('Get Code CD'){
             agent { label 'git_pytest' }
 	    //when { branch 'develop' }
             steps {
-                git branch: 'staging', url: 'https://github.com/cp060/todo-list-aws-config.git'
+                git branch: 'production', url: 'https://github.com/cp060/todo-list-aws-config.git'
                 stash includes: 'samconfig.toml', name: 'samconfig'
-                git branch: 'develop', url: 'https://github.com/cp060/todo-list-aws.git'
+                git branch: 'master', url: 'https://github.com/cp060/todo-list-aws.git'
                 stash 'code'
             }
         }
         
-        stage('Static Test CI') {
-            agent { label 'git_pytest' }
-   	    //when { branch 'develop' }
-            steps {
-                script {
-                    sh 'python3 -m flake8 --exit-zero --format=pylint src > flake8.out'
-                    recordIssues tools: [flake8(name: 'Flake8', pattern: 'flake8.out')], qualityGates : [[threshold: 8, type: 'TOTAL', unstable: true], [threshold: 10, type: 'TOTAL', unstable: false]]
-                    sh 'rm -fr flake8.out && python3 -m bandit --exit-zero -r src -o bandit.out -f custom --msg-template "{abspath}:{line}: {severity}: {test_id}: {msg}"'
-                    recordIssues tools: [pyLint(name: 'Bandit', pattern: 'bandit.out')], qualityGates: [[threshold: 2, type: 'TOTAL', unstable: true], [threshold: 4, type: 'TOTAL', unstable: false]]
-                    sh 'rm -fr bandit.out'
-                }
-            }
-        }
-        
-        stage('Deploy CI'){
+        stage('Deploy CD'){
             agent { label 'sam' }
 	    //when { branch 'develop' }            
             steps {
                 unstash 'samconfig'
                 unstash 'code'
-                sh 'export AWS_DEFAULT_REGION=us-east-1 && sam build && sam validate && sam deploy --force-upload --no-confirm-changeset --no-fail-on-empty-changeset --stack-name staging --config-env staging --resolve-s3 | tee url_output.txt'
+                sh 'export AWS_DEFAULT_REGION=us-east-1 && sam build && sam validate && sam deploy --force-upload --no-confirm-changeset --no-fail-on-empty-changeset --stack-name production --config-env production --resolve-s3 | tee url_output.txt'
                 stash includes: 'url_output.txt', name: 'url_output'
             }
         }
         
-        stage('Rest Test CI'){
-            agent { label 'git_pytest' }
-	    //when { branch 'develop' }
-            steps{
-                unstash 'url_output'
-                sh 'ksh tests.ksh && rm -fr url_output.txt && python3 -m pytest --junitxml=result-rest.xml test/integration/todoApiTest.py'
-                junit 'result-rest.xml'
-                sh 'rm -fr result-rest.xml'
-            }
-        }
-        
-        stage('Promote CI'){
-            agent { label 'git_pytest' }
-	    //when { branch 'develop' }
-            steps{
-                //sh 'git add test/integration/todoApiTest.py && git commit -am "release" && git push -f https://cp060:`cat /var/lib/jenkins/secrets/token`@github.com/cp060/todo-list-aws.git'
-                //sh 'git checkout master && git merge develop && git push -f https://cp060:cat /var/lib/jenkins/secrets/token@github.com/cp060/todo-list-aws.git'
-		sh 'git checkout develop && git checkout master && cp -p JenkinsfileReto5 JenkinsfileReto5.bkp && git merge develop && mv JenkinsfileReto5.bkp JenkinsfileReto5 && git add JenkinsfileReto5 && git commit -m "Release" && git push -f https://cp060:`cat /var/lib/jenkins/secrets/token`@github.com/cp060/todo-list-aws.git'
-            }
-        }
-        
-        stage('Clean agent 1 CI'){
+        stage('Clean agent 1 CD'){
             agent { label 'git_pytest' }
 	    //when { branch 'develop' }
             steps {
@@ -67,7 +31,7 @@ pipeline{
             }
         }
 
-        stage('Clean agent 2 CI'){
+        stage('Clean agent 2 CD'){
             agent { label 'sam' }
 	    //when { branch 'develop' }
             steps {
