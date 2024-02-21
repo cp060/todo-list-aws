@@ -53,7 +53,7 @@ pipeline{
             agent { label 'git_pytest' }
 	    //when { branch 'develop' }
             steps{
-                sh 'git checkout master && cp -p JenkinsfileReto5 JenkinsfileReto5.bkp && git merge develop && mv JenkinsfileReto5.bkp JenkinsfileReto5 && git add JenkinsfileReto5 && git push -f https://cp060:`cat /var/lib/jenkins/secrets/token`@github.com/cp060/todo-list-aws.git'
+                sh 'git checkout master && git merge develop && git push -f https://cp060:`cat /var/lib/jenkins/secrets/token`@github.com/cp060/todo-list-aws.git'
             }
         }
         
