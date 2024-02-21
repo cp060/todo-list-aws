@@ -45,14 +45,14 @@ pipeline{
             }
         }    
         
-        stage('Clean agent 1'){
+        stage('Clean agent 1 CD'){
             agent { label 'git_pytest' }
             steps {
                 cleanWs()
             }
         }
 
-        stage('Clean agent 2'){
+        stage('Clean agent 2 CD'){
             agent { label 'sam' }
             steps {
                 cleanWs()
