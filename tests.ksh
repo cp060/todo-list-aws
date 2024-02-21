@@ -12,6 +12,6 @@ else
         URL="$(egrep Value url_output.txt|tr -s " "|cut -f2 -d" "|grep todos|egrep -v id|uniq|sed 's/\/$//g'|uniq|sed 's/\/todos//g')"
         A=`egrep -ia ^BASE_URL test/integration/todoApiTest.py`
         sed -i "s|${A}|BASE_URL = \"${URL}\"|g" $FILE
-        echo $URL > $SAVE
+        sudo echo $URL > $SAVE
         exit 0
 fi
